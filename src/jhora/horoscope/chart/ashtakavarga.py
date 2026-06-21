@@ -80,8 +80,8 @@ def _trikona_sodhana(binna_ashtaka_varga):
 def _ekadhipatya_sodhana(binna_ashtaka_varga_after_trikona,chart_1d):
     bav = binna_ashtaka_varga_after_trikona[:]
     rasi_owners=const.ashtakavarga_rasi_owners
-    for p in range(const.MOON_ID+1,const.SATURN_ID+1):
-        r1,r2 = rasi_owners[p]
+    dual_pairs = [x for x in rasi_owners if isinstance(x, tuple)]   # the 5 co-owned (r1,r2) pairs
+    for p,(r1,r2) in [(_p,_pr) for _p in const.SUN_TO_SATURN for _pr in dual_pairs]:  # every graha incl. Sun/Moon, all pairs
         r1_occupied = not (chart_1d[r1].strip() == '')
         r2_occupied = not (chart_1d[r2].strip() == '')
         # Rule 1 (either bav is 0. Rule 2: either rasi is occupied by a planet
