@@ -20,9 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, QStringListModel, pyqtSignal
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QCompleter
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QCompleter, QSizePolicy
 
 from jhora import utils
+
+# Minimum readable width when the row is tight (px).
+_PLACE_FIELD_MIN_WIDTH = 200
 
 
 class PlaceWidget(QWidget):
@@ -69,6 +72,11 @@ class PlaceWidget(QWidget):
         self._line_edit = QLineEdit(initial_text, self)
         self._line_edit.setPlaceholderText(placeholder_text)
         self._line_edit.setToolTip(tooltip_text)
+        # Stretch with the parent row instead of locking to a fixed glyph width.
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setMinimumWidth(_PLACE_FIELD_MIN_WIDTH)
+        self._line_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._line_edit.setMinimumWidth(_PLACE_FIELD_MIN_WIDTH)
 
         self._completer_model = QStringListModel()
         self._completer = QCompleter(self._completer_model, self)
@@ -103,7 +111,7 @@ class PlaceWidget(QWidget):
         # Layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._line_edit)
+        layout.addWidget(self._line_edit, 1)
 
     # --------------------------------------------------------
     # Public helpers

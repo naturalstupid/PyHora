@@ -41,6 +41,7 @@ import img2pdf
 from PIL import Image
 import numpy as np
 from jhora import const, utils
+from jhora.ui.wrapping_tabs import MultiRowTabWidget
 from jhora.panchanga import drik, pancha_paksha, vratha
 from jhora.horoscope import info
 from jhora.horoscope.prediction import general
@@ -540,7 +541,7 @@ class ChartTabbed(QWidget):
             self.tabNames = _tab_names
         else:
             self.tabNames = _tab_names[:-1]
-        self.tabWidget = QTabWidget()
+        self.tabWidget = MultiRowTabWidget()
         self.tabWidget.currentChanged.connect(self._process_tab_changed)
         self._v_layout.addWidget(self.tabWidget)
         self.tabCount = len(self.tabNames)
@@ -2823,9 +2824,10 @@ class ChartTabbed(QWidget):
         if ci >=0:
             self._chart_type = list(available_chart_types.keys())[ci]
             self._bhava_chart_type = 'south_indian' if 'west' in self._chart_type.lower() else self._chart_type
-        self.setFixedSize(_main_window_width,_main_window_height)
+        # Allow user resize / maximize / fullscreen. setFixedSize blocked green-button max on macOS.
+        self.setMinimumSize(_main_window_width, _main_window_height)
+        self.resize(_main_window_width, _main_window_height)
         self.showMaximized()
-        #self.setMinimumSize(_main_window_width,_main_window_height)        
     def _create_row1_ui(self):
         self._row1_h_layout = QHBoxLayout()
     
@@ -2873,13 +2875,14 @@ class ChartTabbed(QWidget):
         self._place_widget.placeSelected.connect(lambda _t: self._mark_inputs_changed("place selected"))
     
         self._place_text.setToolTip('Enter place of birth, country name')
-        self._row1_h_layout.addWidget(self._place_widget)
+        self._row1_h_layout.addWidget(self._place_widget, 1)
     
         self._lat_label = QLabel("Latidude:")
         self._row1_h_layout.addWidget(self._lat_label)
     
         self._lat_text = QLineEdit('')
         self._latitude = 0.0
+        self._lat_text.setMaximumWidth(90)
         self._lat_text.setToolTip('Enter Latitude preferably exact at place of birth: Format: +/- xx.xxx')
         self._lat_text.textChanged.connect(lambda _t: self._mark_inputs_changed("latitude changed"))
         self._row1_h_layout.addWidget(self._lat_text)
@@ -2889,6 +2892,7 @@ class ChartTabbed(QWidget):
     
         self._long_text = QLineEdit('')
         self._longitude = 0.0
+        self._long_text.setMaximumWidth(90)
         self._long_text.setToolTip('Enter Longitude preferably exact at place of birth. Format +/- xx.xxx')
         self._long_text.textChanged.connect(lambda _t: self._mark_inputs_changed("longitude changed"))
         self._row1_h_layout.addWidget(self._long_text)
@@ -2898,6 +2902,7 @@ class ChartTabbed(QWidget):
     
         self._tz_text = QLineEdit('')
         self._time_zone = 0.0
+        self._tz_text.setMaximumWidth(70)
         self._tz_text.setToolTip('Enter Time offset from GMT e.g. -5.5 or 4.5')
         self._tz_text.textChanged.connect(lambda _t: self._mark_inputs_changed("timezone changed"))
         self._row1_h_layout.addWidget(self._tz_text)
@@ -3896,8 +3901,12 @@ class ChartTabbed(QWidget):
             self._update_chart_ui_with_info()
             self._profiler.mark("_update_chart_ui_with_info")
 
-            self.resize(self.minimumSizeHint())
-            self._profiler.mark("resize(minimumSizeHint)")
+            # Do not shrink after compute — keeps maximized / user-resized window size.
+            if not self.isMaximized():
+                hint = self.minimumSizeHint()
+                cur = self.size()
+                self.resize(max(cur.width(), hint.width()), max(cur.height(), hint.height()))
+            self._profiler.mark("resize(grow-only)")
 
             self.tabWidget.setFocus()
             self._profiler.mark("tabWidget.setFocus")
@@ -6209,23 +6218,12 @@ class ChartTabbed(QWidget):
             self._profiler.end("UI")
 
     def _reset_place_text_size(self):
-        pt = 'Chennai'#self._place_text.text().split(',')[0]
-        f = QFont("",0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw,ph)
-        self._place_text.adjustSize()
-        self._place_text.selectionStart()
+        # PlaceWidget stretches with the row; keep caret at start after lookup.
         self._place_text.setCursorPosition(0)
+
     def _resize_place_text_size(self):
-        pt = self._place_text.text()
-        f = QFont("",0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw,ph)
-        self._place_text.adjustSize()       
+        # Intentionally empty: fixed-width sizing was shrinking the place field.
+        return
     def _get_location(self,place_name):
         result = utils.get_location(place_name)
         if result:

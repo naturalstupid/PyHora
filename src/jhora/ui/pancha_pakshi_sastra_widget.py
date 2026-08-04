@@ -205,23 +205,26 @@ class PanchaPakshiSastraWidget(QWidget):
         self._place_widget.textEditedSignal.connect(self._resize_place_text_size)
         self._place_widget.placeSelected.connect(self._get_location)
         self._place_text.setToolTip('Enter place of birth, country name')
-        h_layout.addWidget(self._place_widget)
+        h_layout.addWidget(self._place_widget, 1)
         self._lat_label = QLabel("Latidude:")
         h_layout.addWidget(self._lat_label)
         self._lat_text = QLineEdit('')
         self._latitude = 0.0
+        self._lat_text.setMaximumWidth(90)
         self._lat_text.setToolTip('Enter Latitude preferably exact at place of birth: Format: +/- xx.xxx')
         h_layout.addWidget(self._lat_text)
         self._long_label = QLabel("Longitude:")
         h_layout.addWidget(self._long_label)
         self._long_text = QLineEdit('')
         self._longitude = 0.0
+        self._long_text.setMaximumWidth(90)
         self._long_text.setToolTip('Enter Longitude preferably exact at place of birth. Format +/- xx.xxx')
         h_layout.addWidget(self._long_text)
         self._tz_label = QLabel("Time Zone:")
         h_layout.addWidget(self._tz_label)
         self._tz_text = QLineEdit('')
         self._time_zone = 0.0
+        self._tz_text.setMaximumWidth(70)
         self._tz_text.setToolTip('Enter Time offset from GMT e.g. -5.5 or 4.5')
         h_layout.addWidget(self._tz_text)
         if const.use_internet_for_location_check:
@@ -283,13 +286,7 @@ class PanchaPakshiSastraWidget(QWidget):
         self._tz_text.setText(str(self._time_zone))
         self._elevation = 0.0
     def _resize_place_text_size(self):
-        pt = self._place_text.text()
-        f = QFont("",0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw,ph)
-        self._place_text.adjustSize()
+        return
     def _get_location(self,place_name):
         result = utils.get_location(place_name)
         print("pancha pakshi RESULT",result)

@@ -72,7 +72,9 @@ class ChartSimple(QWidget):
         ci = _index_containing_substring(available_chart_types,chart_type.lower())
         if ci >=0:
             self._chart_type = available_chart_types[ci]
-        self.setFixedSize(_main_window_width,_main_window_height)
+        # Allow user resize / maximize (setFixedSize blocked that).
+        self.setMinimumSize(_main_window_width, _main_window_height)
+        self.resize(_main_window_width, _main_window_height)
         self.setWindowTitle('')
         self._v_layout = QVBoxLayout()
         self._create_row1_ui()
@@ -124,23 +126,26 @@ class ChartSimple(QWidget):
         self._place_text.textChanged.connect(self._resize_place_text_size)
         self._place_text.editingFinished.connect(lambda : self._get_location(self._place_text.text()))
         self._place_text.setToolTip('Enter place of birth, country name')
-        h_layout.addWidget(self._place_text)
+        h_layout.addWidget(self._place_text, 1)
         lat_label = QLabel("Latidude:")
         h_layout.addWidget(lat_label)
         self._lat_text = QLineEdit('')
         self._latitude = 0.0
+        self._lat_text.setMaximumWidth(90)
         self._lat_text.setToolTip('Enter Latitude preferably exact at place of birth: Format: +/- xx.xxx')
         h_layout.addWidget(self._lat_text)
         long_label = QLabel("Longitude:")
         h_layout.addWidget(long_label)
         self._long_text = QLineEdit('')
         self._longitude = 0.0
+        self._long_text.setMaximumWidth(90)
         self._long_text.setToolTip('Enter Longitude preferably exact at place of birth. Format +/- xx.xxx')
         h_layout.addWidget(self._long_text)
         tz_label = QLabel("Time Zone:")
         h_layout.addWidget(tz_label)
         self._tz_text = QLineEdit('')
         self._time_zone = 0.0
+        self._tz_text.setMaximumWidth(70)
         self._tz_text.setToolTip('Enter Time offset from GMT e.g. -5.5 or 4.5')
         " Initialize with default place based on IP"
         loc = utils.get_place_from_user_ip_address()
@@ -151,23 +156,10 @@ class ChartSimple(QWidget):
         h_layout.addWidget(self._tz_text)
         self._v_layout.addLayout(h_layout)
     def _reset_place_text_size(self):
-        pt = 'Chennai'#self._place_text.text().split(',')[0]
-        f = QFont("",0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw,ph)
-        self._place_text.adjustSize()
-        self._place_text.selectionStart()
         self._place_text.setCursorPosition(0)
+
     def _resize_place_text_size(self):
-        pt = self._place_text.text()
-        f = QFont("",0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw,ph)
-        self._place_text.adjustSize()       
+        return
     def _get_location(self,place_name):
         result = utils.get_location(place_name)
         print('RESULT',result)

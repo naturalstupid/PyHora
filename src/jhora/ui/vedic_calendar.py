@@ -349,8 +349,10 @@ class VedicCalendar(QWidget):
         self.selected_cell = None; self.previous_month_cell=None; self.next_month_cell=None
         self.setWindowTitle(self.res['calendar_str']+' '+const._APP_VERSION)
         self.setWindowIcon(QIcon(const._IMAGE_ICON_PATH))
+        self.setMinimumSize(900, 650)
         self.col_min = 0; self.row_min = 0; self.col_max = 6; self.row_max = 6
         self.initUI()
+        self.showMaximized()
         self.setFocus()
     def _calendar_cache_key(self, jd):
         return (
@@ -416,15 +418,18 @@ class VedicCalendar(QWidget):
         input_layout.addWidget(self.date_text)
         self._place_label = QLabel('Place Name:')
         input_layout.addWidget(self._place_label)
-        input_layout.addWidget(self._place_widget)
+        input_layout.addWidget(self._place_widget, 1)
         self._lat_label = QLabel('Latitude:')
         input_layout.addWidget(self._lat_label)
+        self._lat_text.setMaximumWidth(90)
         input_layout.addWidget(self._lat_text)
         self._long_label = QLabel('Longitude:')
         input_layout.addWidget(self._long_label)
+        self._long_text.setMaximumWidth(90)
         input_layout.addWidget(self._long_text)
         self._tz_label = QLabel('TimeZone Hours:')
         input_layout.addWidget(self._tz_label)
+        self._tz_text.setMaximumWidth(70)
         input_layout.addWidget(self._tz_text)
         self._lang_combo = QComboBox()
         self._lang_combo.addItems(const.available_languages.keys())
@@ -584,13 +589,7 @@ class VedicCalendar(QWidget):
                         _cell_style +=  f"background-color: {default_color}"
                     cell.setStyleSheet(_cell_style)
     def _resize_place_text_size(self):
-        pt = self._place_text.text()
-        f = QFont("", 0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw, ph)
-        self._place_text.adjustSize()
+        return
 
     def _get_location(self, place_name):
         result = utils.get_location(place_name)
@@ -817,8 +816,11 @@ class VedicCalendar(QWidget):
             self.date_text.setText(str(y)+','+str(m)+','+str(d))
             if self.selected_cell == self.previous_month_cell or self.selected_cell==self.next_month_cell:
                 self.computeCalendar()
-            """ TODO: Following line is patch up work Needs proper fix """
-            self.showNormal(); self.resize(self.minimumSizeHint()) #self.showMaximized()
+            # Grow-only so month navigation does not undo maximize / user resize.
+            if not self.isMaximized():
+                hint = self.minimumSizeHint()
+                cur = self.size()
+                self.resize(max(cur.width(), hint.width()), max(cur.height(), hint.height()))
         except Exception as e:
             tb = sys.exc_info()[2]
             print(f"VedicCalendar:cell_clicked: An error occurred: {e}",'line number',tb.tb_lineno)

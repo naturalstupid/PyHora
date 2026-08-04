@@ -44,6 +44,7 @@ class MatchWindow(QWidget):
     def __init__(self,chart_type='south indian'):
         super().__init__()
         self.setMinimumSize(_main_window_width,_main_window_height)
+        self.resize(_main_window_width, _main_window_height)
         fp = open(_INPUT_DATA_FILE, encoding='utf-8', mode='r')
         window_title = fp.readline().split('=')[1]
         header_title = fp.readline().split('=')[1]
@@ -51,7 +52,6 @@ class MatchWindow(QWidget):
         fp.close()
         self.setWindowIcon(QtGui.QIcon(_IMAGE_ICON_PATH))
         self._language = list(available_languages.keys())[0]
-        #self.setFixedSize(650,630)
         self.setWindowTitle(window_title)
         v_layout = QVBoxLayout()
         """

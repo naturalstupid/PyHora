@@ -706,7 +706,9 @@ class PanchangaWidget(QWidget):
         self._footer_title = ''
         self.setWindowIcon(QtGui.QIcon(_IMAGE_ICON_PATH))
         # DO NOT overwrite self._language here
-        self.setFixedSize(_main_window_width, _main_window_height)
+        # Allow user resize / maximize / fullscreen (setFixedSize blocked that).
+        self.setMinimumSize(_main_window_width, _main_window_height)
+        self.resize(_main_window_width, _main_window_height)
         self.showMaximized()
 
     def _create_row1_ui(self):
@@ -751,7 +753,7 @@ class PanchangaWidget(QWidget):
         self._place_widget.placeSelected.connect(self._get_location)
         self._place_widget.textEditedSignal.connect(lambda _t: self._mark_inputs_changed("place edited"))
 
-        self._row1_h_layout.addWidget(self._place_widget)
+        self._row1_h_layout.addWidget(self._place_widget, 1)
         self._place_text.setToolTip('Enter place of birth, country name')
 
         self._lat_label = QLabel("Latidude:")
@@ -759,6 +761,7 @@ class PanchangaWidget(QWidget):
 
         self._lat_text = QLineEdit('')
         self._latitude = 0.0
+        self._lat_text.setMaximumWidth(90)
         self._lat_text.setToolTip('Enter Latitude preferably exact at place of birth: Format: +/- xx.xxx')
         self._lat_text.textChanged.connect(lambda _t: self._mark_inputs_changed("latitude changed"))
         self._row1_h_layout.addWidget(self._lat_text)
@@ -768,6 +771,7 @@ class PanchangaWidget(QWidget):
 
         self._long_text = QLineEdit('')
         self._longitude = 0.0
+        self._long_text.setMaximumWidth(90)
         self._long_text.setToolTip('Enter Longitude preferably exact at place of birth. Format +/- xx.xxx')
         self._long_text.textChanged.connect(lambda _t: self._mark_inputs_changed("longitude changed"))
         self._row1_h_layout.addWidget(self._long_text)
@@ -777,6 +781,7 @@ class PanchangaWidget(QWidget):
 
         self._tz_text = QLineEdit('')
         self._time_zone = 0.0
+        self._tz_text.setMaximumWidth(70)
         self._tz_text.setToolTip('Enter Time offset from GMT e.g. -5.5 or 4.5')
         self._tz_text.textChanged.connect(lambda _t: self._mark_inputs_changed("timezone changed"))
         self._row1_h_layout.addWidget(self._tz_text)
@@ -1047,7 +1052,11 @@ class PanchangaWidget(QWidget):
             self.tabWidget.setCurrentIndex(0)
             self._update_main_window_label_and_tooltips()
             self._update_chart_ui_with_info()
-            self.resize(self.minimumSizeHint())
+            # Do not shrink after compute — keeps maximized / user-resized window size.
+            if not self.isMaximized():
+                hint = self.minimumSizeHint()
+                cur = self.size()
+                self.resize(max(cur.width(), hint.width()), max(cur.height(), hint.height()))
             self.tabWidget.setFocus()
     
             self._ensure_panchanga_update_timer()
@@ -1079,25 +1088,10 @@ class PanchangaWidget(QWidget):
         self.update()
 
     def _reset_place_text_size(self):
-        pt = 'Chennai'
-        f = QFont("", 0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw, ph)
-        self._place_text.adjustSize()
-        self._place_text.selectionStart()
         self._place_text.setCursorPosition(0)
 
     def _resize_place_text_size(self):
-        pt = self._place_text.text()
-        if not pt: pt = "Chennai"
-        f = QFont("", 0)
-        fm = QFontMetrics(f)
-        pw = fm.boundingRect(pt).width()
-        ph = fm.height()
-        self._place_text.setFixedSize(pw, ph)
-        self._place_text.adjustSize()
+        return
 
     def _get_location(self, place_name):
         result = utils.get_location(place_name)

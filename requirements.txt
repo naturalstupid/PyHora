@@ -9,3 +9,8 @@ Requests==2.32.3
 setuptools==69.5.1
 pyswisseph==2.10.3.2
 timezonefinder==6.5.2
+reverse_geocode==1.6.6
+python-dateutil>=2.9.0
+islam>=2.2.0
+hijridate>=2.6.0
+ephem>=4.2.0
