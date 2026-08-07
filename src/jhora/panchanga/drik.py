@@ -329,6 +329,9 @@ def sidereal_longitude(jd_utc, planet):
         flags = swe.FLG_SWIEPH + swe.FLG_SPEED
     else:
         flags = PLANET_FLAGS #swe.FLG_SWIEPH | swe.FLG_SIDEREAL | _rise_flags
+        set_ayanamsa_mode()  # ensure swe's sid mode matches const._DEFAULT_AYANAMSA_MODE;
+        # PLANET_FLAGS carries FLG_SIDEREAL but swisseph's C-level sid mode is separate
+        # global state that silently defaults to Fagan-Bradley until explicitly set.
     if planet == const._KETU:
         longi,_ = swe.calc_ut(jd_utc, const._RAHU, flags = flags)
         ketu_long = (longi[0]+180)%360

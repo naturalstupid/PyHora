@@ -300,7 +300,7 @@ available_ayanamsa_modes = {"FAGAN":swe.SIDM_FAGAN_BRADLEY ,"KP": swe.SIDM_KRISH
                             "SIDM_USER":swe.SIDM_USER,'SUNDAR_SS':'',
                             #"ARYABHATA_522":swe.SIDM_ARYABHATA_522, 
                             }
-_DEFAULT_AYANAMSA_MODE = 'TRUE_PUSHYA' #'LAHIRI' #'TRUE_CITRA'
+_DEFAULT_AYANAMSA_MODE = 'LAHIRI' #'TRUE_CITRA'
 human_life_span_for_vimsottari_dhasa = 120
 # Nakshatra lords, order matters. See https://en.wikipedia.org/wiki/Dasha_(astrology)
  # Nak Lord Order: Aswini(Rahu),Bharani(Mars),Krithika(Moon),Rohini(Sun),Mrigasira(Venus),Ardra(Ketu),...
