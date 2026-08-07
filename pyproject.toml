@@ -14,7 +14,7 @@ requires-python = ">=3.8"
 keywords = ["Vedic Astrology", "Astrology", "Hindu Astrology", "Kundali", "Panchang", "Horoscope", "Hora", "JHora"]
 
 # PEP 639 modern fields replacing license = {file="LICENSE"}
-license-expression = "AGPL-3.0-or-later"
+license = "AGPL-3.0-or-later"
 license-files = ["LICENSE"]
 
 classifiers = [
