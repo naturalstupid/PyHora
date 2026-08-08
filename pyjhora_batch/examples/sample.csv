@@ -1,0 +1,4 @@
+name,date_of_birth,time_of_birth,place,latitude,longitude,timezone,gender
+Test Person,"1985,6,15",10:30:00,Ujjain,23.5,75.75,5.5,male
+Asha Rao,"1985,11,2",08:15:00,Chennai,13.0878,80.2785,5.5,female
+Bad Row Missing Coords,"2000,1,1",06:00:00,Nowhere,,,5.5,male

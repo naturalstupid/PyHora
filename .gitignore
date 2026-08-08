@@ -10,3 +10,12 @@ src/.settings/org.eclipse.core.resources.prefs
 src/.settings/org.eclipse.core.resources.prefs
 src/jhora/data/geonames_places_5k.csv
 src/jhora/data/geonames_places_5k_IN.csv
+
+# pyjhora_batch: local build output, and batch input/output holding real
+# birth details — never commit personal data.
+.DS_Store
+__pycache__/
+/build
+/reports
+/partners.csv
+/partners.csv.orig

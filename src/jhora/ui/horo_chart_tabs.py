@@ -40,7 +40,7 @@ from _datetime import datetime, timedelta, timezone
 import img2pdf
 from PIL import Image
 import numpy as np
-from jhora import const, utils
+from jhora import const, utils, config
 from jhora.panchanga import drik, pancha_paksha, vratha
 from jhora.horoscope import info
 from jhora.horoscope.prediction import general
@@ -4084,6 +4084,7 @@ class ChartTabbed(QWidget):
         self.tabWidget.setCurrentIndex(current_tab)
         self._kundali_chart_combo.setCurrentIndex(self._current_kundali_chart_index)
     def _fill_panchangam_info(self, info_str,format_str):
+        if self._horo is None: return # horoscope not computed yet (e.g. signals firing during construction)
         jd = self._horo.julian_day
         place = drik.Place(self._place_name,float(self._latitude),float(self._longitude),float(self._time_zone))
         bt=self._horo.birth_time
@@ -5104,6 +5105,7 @@ class ChartTabbed(QWidget):
     def _update_tab_chart_information(self,chart_index=None,chart_method=None,divisional_chart_factor=None,
                                       base_rasi=None,count_from_end_of_sign=None,
                                       chart_index_1=None,chart_method_1=None,chart_index_2=None,chart_method_2=None):
+        if self._horo is None: return # horoscope not computed yet (e.g. signals firing during construction)
         info_str = ''
         format_str = _KEY_VALUE_FORMAT_
         self._fill_panchangam_info(info_str, format_str)

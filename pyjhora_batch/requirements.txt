@@ -1,0 +1,7 @@
+# pyjhora_batch dependencies (on top of a working PyJHora install).
+# CSV -> .jhd and CSV -> .txt need nothing beyond PyJHora itself.
+
+reportlab>=4.0   # vector PDF output (--pdf-mode vector, the default)
+openpyxl>=3.1    # optional: Excel (.xlsx) input
+pytest>=7        # optional: running the test suite
+pypdf>=4.0       # optional: asserts on PDF contents in the test suite
