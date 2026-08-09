@@ -323,7 +323,7 @@ def adhi_yoga_from_jd_place(jd,place,divisional_chart_factor=1):
     _natural_benefics = charts.benefics(jd, place,divisional_chart_factor=divisional_chart_factor)[:const._pp_count_upto_ketu]
     yoga_houses = [const.HOUSE_6,const.HOUSE_7,const.HOUSE_8]
     houses_from_moon = [(p_to_h[const.MOON_ID]+mh)%12 for mh in yoga_houses]
-    return all(p_to_h[pid] in houses_from_moon for pid in _natural_benefics)
+    return any(p_to_h[pid] in houses_from_moon for pid in _natural_benefics)
 def adhi_yoga_from_planet_positions(planet_positions,natural_benefics=None):
     """ BVR-7 Adhi Yoga - natural benefics occupy 6th, 7th and 8th from Moon, """
     h_to_p = utils.get_house_planet_list_from_planet_positions(planet_positions)
@@ -345,7 +345,7 @@ def adhi_yoga(chart_1d,natural_benefics=None):
         _natural_benefics = const.natural_benefics
     if _is_mercury_benefic(chart_1d):
         _natural_benefics += [const.MERCURY_ID] 
-    return all(p_to_h[pid] in houses_from_moon for pid in _natural_benefics)
+    return any(p_to_h[pid] in houses_from_moon for pid in _natural_benefics)
 """ Pancha Mahapurusha Yogas """
 def ruchaka_yoga_from_planet_positions(planet_positions):
     """  BVR-22 Ruchaka Yoga - Mars should be in 0 or 7 or 9th rasi and he should be in 1, 4, 7 or 10th from lagna """
