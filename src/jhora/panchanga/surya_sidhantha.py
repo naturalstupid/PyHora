@@ -36,11 +36,22 @@ to_dms = lambda x: utils.to_dms(x,is_lat_long='plong')
 ahargana_khanda_khaadyaka = lambda jd: jd - 1964031
 #ahargana_graha_laghavam = lambda jd: jd - 1687850
 mandaphala_of_sun = 0.0
+# SS працює тільки з 9 класичними планетами; список фіксований,
+# щоб не залежати від drik.planet_list (який змінюється true/mean nodes,
+# включенням Uranus-Pluto тощо). Ключі = const._RAHU/_KETU (11/-10 або 10/-10).
+SS_PLANET_LIST = [const._SUN, const._MOON, const._MARS, const._MERCURY,
+                  const._JUPITER, const._VENUS, const._SATURN, const._RAHU, const._KETU]
+def _manda_periphery(planet):
+    """Класичні SS-периферії манди: скаляр або (Po,Pe) → (Po,Pe)."""
+    mp = const.planet_mandaphala_periphery[planet]
+    if isinstance(mp, (int, float)):
+        return float(mp), float(mp)
+    return float(mp[0]), float(mp[1])
 def kali_ahargana(jd):
     """ TODO: CHECK: Should this be int or float? """
     kad = int(jd - const.mahabharatha_tithi_julian_day) # (jd - 588466)
     wday = int(kad) % 7
-    wdayjd = drik.vaara(jd)
+    wdayjd = drik.civil_weekday(jd)   # drik.vaara тепер вимагає place; для ахаргани потрібен просто день тижня
     winc = (wdayjd - 5 - wday)
     wdayc = (wday + winc + 5) % 7
     assert wdayc==wdayjd
@@ -71,10 +82,10 @@ def _mean_ketu_longitude(jd):
 def _planet_mean_longitude(jd, place,planet):
     """ TODO: Mars not matching close to Drik """
     """ RESET Planet's mean longitude"""
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     const.planet_mean_longitudes[planet] = 0.0 
     mean_revolutions = const.planet_mean_revolutions_at_kali[planet]
-    mean_daily_motion = round(mean_revolutions / const.civil_days_in_mahayuga * 360,7) #const.daily_mean_motions[planet] #
+    mean_daily_motion = mean_revolutions / const.civil_days_in_mahayuga * 360 # round(...,7) дає похибку ~5' на сучасних датах
     kan = kali_ahargana(jd)
     mean_longitude = ((kan * mean_daily_motion) + 360) %360
     #print('planet,kan,mean_revolutions,mean_daily_motion,mean_longitude',p_id,kan,mean_revolutions,
@@ -91,7 +102,7 @@ def _planet_mean_longitude(jd, place,planet):
     const.planet_mean_longitudes[planet] = corrected_long   
     return corrected_long
 def _desantara_correction(place:drik.Place,planet):
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     planet_daily_motion = const.daily_mean_motions[planet]
     plong = place.longitude
     ulong = const.ujjain_lat_long[1]
@@ -100,7 +111,7 @@ def _desantara_correction(place:drik.Place,planet):
     return dc
 def bhujantara_correction(planet,mandaphala_of_sun):
     """ TODO: To use Planet's true motion """
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     bc = const.daily_mean_motions[planet]*mandaphala_of_sun/360
     #print(p_id,'bhujantara_correction',mandaphala_of_sun*60,const.daily_mean_motions[planet]*60,bc,utils.to_dms(bc,is_lat_long='plong'))
     return bc
@@ -181,9 +192,9 @@ def ascendant(jd, place:drik.Place, sun_long):
 def _mandaphala_planet_new(jd,planet):
     """ Mandaphala using just periphery and mandocca """
     pass
-def _true_daily_motion_planet(jd,planet):
-    planet_mean_long = _planet_mean_longitude(jd,place,planet)
-    p_id = drik.planet_list.index(planet)
+def _true_daily_motion_planet(jd, place, planet):
+    planet_mean_long = _planet_mean_longitude(jd, place, planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     if planet in [const._RAHU, const._KETU]:
         return 0.0
     kan = kali_ahargana(jd)
@@ -207,12 +218,12 @@ def _true_daily_motion_planet(jd,planet):
     if planet in [const._SUN, const._MOON]:
         #planet_mandaphala_periphery = const.planet_mandaphala_periphery_modern[planet]
         #corrected_periphery = planet_mandaphala_periphery - (1.0/3.0)*abs(sind(mandakendra))
-        Po,Pe = const.planet_mandaphala_periphery_modern[planet]
+        Po,Pe = _manda_periphery(planet)
         corrected_periphery = Pe - (Pe-Po) * abs(sind(mandakendra))
         if planet == const._MOON:
-            print(p_id,'planet_mean_motion before',planet_mean_motion)
+            #print(p_id,'planet_mean_motion before',planet_mean_motion)
             planet_mean_motion = planet_mean_motion - const.moon_apogee_mean_motion
-            print(p_id,'planet_mean_motion after',planet_mean_motion)
+            #print(p_id,'planet_mean_motion after',planet_mean_motion)
         #print(p_id,'corrected_periphery',corrected_periphery)
         rectified_periphery = (const.mandakendrajya_indian_sine_radius/360.0) * corrected_periphery
         #print(p_id,'rectified_periphery',rectified_periphery) 
@@ -222,16 +233,17 @@ def _true_daily_motion_planet(jd,planet):
         planet_true_motion_correction = corrected_periphery*planet_mean_motion*tab_sine_diff/(360*225)
         planet_true_motion = planet_mean_motion + mandakendra_sign * planet_true_motion_correction
     else:
-        Po,Pe = const.planet_mandaphala_periphery_modern[planet]
+        Po,Pe = _manda_periphery(planet)
         corrected_periphery = Pe - (Pe-Po) * abs(sind(mandakendra))
         #print(p_id,'mandaphala corrected_periphery',Po,Pe,corrected_periphery)
-        mandaphala_correction = const.mandakendrajya_indian_sine_radius/360.0 * corrected_periphery * sind(mandakendra)
+        # Для інших планет похідна мандафали (true motion) = середній рух + знак*поправка
+        tab_sine_diff = abs(cosd(mandakendra))  # d(mandaphala)/d(kendra) ~ cos
         planet_true_motion_correction = corrected_periphery*planet_mean_motion*tab_sine_diff/(360*225)
         planet_true_motion = planet_mean_motion + mandakendra_sign * planet_true_motion_correction
     return planet_true_motion
     
 def _mandaphala_planet(jd,planet,planet_mean_long):
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     if planet in [const._RAHU, const._KETU]:
         return 0.0
     kan = kali_ahargana(jd)
@@ -255,7 +267,7 @@ def _mandaphala_planet(jd,planet,planet_mean_long):
     if planet in [const._SUN, const._MOON]:
         #planet_mandaphala_periphery = const.planet_mandaphala_periphery_modern[planet]
         #corrected_periphery = planet_mandaphala_periphery - (1.0/3.0)*abs(sind(mandakendra))
-        Po,Pe = const.planet_mandaphala_periphery_modern[planet]
+        Po,Pe = _manda_periphery(planet)
         corrected_periphery = Pe - (Pe-Po) * abs(sind(mandakendra))
         if planet == const._MOON:
             #print(p_id,'planet_mean_motion before',planet_mean_motion)
@@ -272,7 +284,7 @@ def _mandaphala_planet(jd,planet,planet_mean_long):
         #print(p_id,'planet_true_motion',planet_mean_motion,planet_true_motion_correction,corrected_periphery,tab_sine_diff,utils.to_dms(planet_true_motion,is_lat_long='plong')) 
         mandaphala_correction = mandakendra_sign * rectified_periphery*sind(mandakendra)
     else:
-        Po,Pe = const.planet_mandaphala_periphery_modern[planet]
+        Po,Pe = _manda_periphery(planet)
         corrected_periphery = Pe - (Pe-Po) * abs(sind(mandakendra))
         #print(p_id,'mandaphala corrected_periphery',Po,Pe,corrected_periphery)
         mandaphala_correction = const.mandakendrajya_indian_sine_radius/360.0 * corrected_periphery * sind(mandakendra)
@@ -281,25 +293,25 @@ def _mandaphala_planet(jd,planet,planet_mean_long):
     #print(p_id,'mandaphala_correction',mandaphala_correction)
     return mandaphala_correction
 def _true_longitude_after_sighra_correction(jd,place,planet,planet_mean_long,mandaphala_correction):
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     MP = planet_mean_long
     if planet in [const._SUN, const._MOON, const._RAHU, const._KETU]:
         return 0.0
-    p_id = drik.planet_list.index(planet)
-    def _get_sighra_anamoly(jd,planet):
+    p_id = list(SS_PLANET_LIST).index(planet)
+    def _get_sighra_anamoly(jd,planet,long):
         if const.planet_mean_longitudes[const._SUN]==0.0:
             const.planet_mean_longitudes[const._SUN] = _mean_solar_longitude(jd)[0] #_planet_mean_longitude(jd, place, const._SUN)
         if planet in [const._MERCURY, const._VENUS]:
-            m = (planet_mean_long - const.planet_mean_longitudes[const._SUN]+360)%360
-            #print(p_id,'Sighra anomaly = Planets sighrocca - mean sun',to_dms(planet_mean_long),'-',to_dms(const.planet_mean_longitudes[const._SUN]),'=',to_dms(m))                  
+            m = (long - const.planet_mean_longitudes[const._SUN]+360)%360
+            #print(p_id,'Sighra anomaly = Planets sighrocca - mean sun',to_dms(long),'-',to_dms(const.planet_mean_longitudes[const._SUN]),'=',to_dms(m))                  
         else:
-            m = (const.planet_mean_longitudes[const._SUN] - planet_mean_long+360)%360 #const.planet_mean_longitudes[planet]+360)%360
+            m = (const.planet_mean_longitudes[const._SUN] - long+360)%360 #const.planet_mean_longitudes[planet]+360)%360
             #print(p_id,'Sighra anomaly = Mean sun - mean planet',to_dms(const.planet_mean_longitudes[const._SUN]),'-', to_dms(const.planet_mean_longitudes[planet]),'=',to_dms(m))
         return m
     def _get_sighra_correction(jd,planet,p_m_l):
-        m = _get_sighra_anamoly(jd, planet)
+        m = _get_sighra_anamoly(jd, planet, p_m_l)
         """
-        p_id = drik.planet_list.index(planet)
+        p_id = list(SS_PLANET_LIST).index(planet)
         if const.planet_mean_longitudes[const._SUN]==0.0:
             const.planet_mean_longitudes[const._SUN] = _mean_solar_longitude(jd)[0] #_planet_mean_longitude(jd, place, const._SUN)
         if planet in [const._MERCURY, const._VENUS]:
@@ -341,9 +353,16 @@ def _true_longitude_after_sighra_correction(jd,place,planet,planet_mean_long,man
     SE2 = _get_sighra_correction(jd,planet,P3)
     P4 = P3 + SE2
     #print(p_id,'4th step _get_sighra_correction','P3,SE2,P4',P3,SE2,P4)
+    if planet in [const._MERCURY, const._VENUS]:
+        """ Нижні планети: сігра-фала = елонгація відносно Сонця.
+            Геоцентрична довгота = довгота Сонця + елонгація (не mean + фала!). """
+        if const.planet_mean_longitudes[const._SUN] == 0.0:
+            const.planet_mean_longitudes[const._SUN] = _planet_mean_longitude(jd, place, const._SUN)
+        sun_long = _planet_true_longitude(jd, place, const._SUN, const.planet_mean_longitudes[const._SUN])
+        P4 = (sun_long + SE2) % 360
     return P4
 def _planet_true_longitude(jd,place,planet,planet_mean_long):
-    p_id = drik.planet_list.index(planet)
+    p_id = list(SS_PLANET_LIST).index(planet)
     if planet in [const._RAHU, const._KETU]:
         return planet_mean_long
     """ Correction for Equation of Center aka Mandaphala """
@@ -376,8 +395,8 @@ def planet_positions(jd,place:drik.Place):
     #ss_ayanamsa = drik.get_ayanamsa_value(jd)
     #print('SS Ayanamsa',ss_ayanamsa)
     planet_corrections = [0,0.0,0,0.0,0,0,0,0,0] # [x-ss_ayanamsa for x in [0,0.0,0,0.0,0,0,0,0,0]]
-    for planet in drik.planet_list: #[const._SUN,const._MOON,const._SATURN]:#
-        p_id = drik.planet_list.index(planet)
+    for planet in SS_PLANET_LIST: #[const._SUN,const._MOON,const._SATURN]:#
+        p_id = list(SS_PLANET_LIST).index(planet)
         mean_long = _planet_mean_longitude(jd,place,planet)
         #print(p_id,'mean longitude',planet,mean_long,utils.to_dms(mean_long, is_lat_long='plong'))
         corrected_long = (_planet_true_longitude(jd,place,planet, mean_long)+planet_corrections[p_id])%360.
@@ -425,8 +444,8 @@ def tithi(jd, place):
     _tithi = (l_diff/12)%30
     _tithi_no = math.ceil(_tithi)
     _td_left = _tithi_no*12-l_diff
-    sun_dm = _true_daily_motion_planet(jd, const._SUN)
-    moon_dm = _true_daily_motion_planet(jd, const._MOON)
+    sun_dm = _true_daily_motion_planet(jd, place, const._SUN)
+    moon_dm = _true_daily_motion_planet(jd, place, const._MOON)
     _th_left = _td_left/(moon_dm-sun_dm)*24.0
     _,_,_,h = utils.jd_to_gregorian(jd)
     _,_,_,fh = utils.jd_to_gregorian(jd+_th_left)
@@ -437,7 +456,7 @@ def nakshatra(jd,place):
     moon_long = pp[2][1][0]*30+pp[2][1][1]
     nak_no,padham_no,_ = drik.nakshatra_pada(moon_long)
     rem = (nak_no / 27 * 360.)-moon_long
-    moon_dm = _true_daily_motion_planet(jd, const._MOON)
+    moon_dm = _true_daily_motion_planet(jd, place, const._MOON)
     _nak_left = rem/moon_dm*24.0
     _,_,_,h = utils.jd_to_gregorian(jd)
     _,_,_,fh = utils.jd_to_gregorian(jd+_nak_left)
