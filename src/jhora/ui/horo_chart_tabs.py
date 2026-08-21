@@ -40,7 +40,7 @@ from _datetime import datetime, timedelta, timezone
 import img2pdf
 from PIL import Image
 import numpy as np
-from jhora import const, utils
+from jhora import const, utils, config
 from jhora.panchanga import drik, pancha_paksha, vratha
 from jhora.horoscope import info
 from jhora.horoscope.prediction import general
@@ -3030,6 +3030,16 @@ class ChartTabbed(QWidget):
     def _create_row_3_ui(self):
         self._row3_h_layout = QHBoxLayout()
     
+        # Вибір методу розрахунку: Drik (Swiss Ephemeris) або Surya Siddhanta
+        self._calculation_type_combo = QComboBox()
+        self._calculation_type_combo.addItem(self.resources['drik_panchang_str'], 'drik')
+        self._calculation_type_combo.addItem(self.resources['ss_panchang_str'], 'ss')
+        self._calculation_type_combo.setToolTip('Choose calculation method (Drik - Swiss Ephemeris / Surya Siddhanta)')
+        _calc_idx = 0 if self._calculation_type == 'drik' else 1
+        self._calculation_type_combo.setCurrentIndex(_calc_idx)
+        self._calculation_type_combo.activated.connect(self._on_calculation_type_changed)
+        self._row3_h_layout.addWidget(self._calculation_type_combo)
+
         self._pravesha_combo = QComboBox()
         self._pravesha_combo.addItems(const._PRAVESHA_LIST)
         self._pravesha_combo.setCurrentIndex(0)
@@ -3072,6 +3082,15 @@ class ChartTabbed(QWidget):
     
         # Ensure clean initial appearance
         self._clear_inputs_changed()
+    
+    def _on_calculation_type_changed(self, index):
+        """Зміна методу розрахунку: drik (Swiss Ephemeris) або surya_sidhantha."""
+        self._calculation_type = self._calculation_type_combo.itemData(index)
+        if self._calculation_type == 'ss':
+            drik.set_ayanamsa_mode('SURYASIDDHANTA')
+        else:
+            drik.set_ayanamsa_mode()
+        self._mark_inputs_changed("calculation type changed")
     
     def _create_row_2_and_3_ui(self):
         v_layout = QVBoxLayout()
@@ -3827,11 +3846,13 @@ class ChartTabbed(QWidget):
             self._dhasa_options_button.setText(self._dhasa_combo.currentText()+' '+self.resources['options_str'])
 
         del blockers
-    def compute_horoscope(self, calculation_type='drik'):
+    def compute_horoscope(self, calculation_type=None):
         """
             Compute the horoscope based on details entered
             if details missing - error is displayed
         """
+        if calculation_type is None:
+            calculation_type = self._calculation_type
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             start_time = datetime.now()
@@ -3855,6 +3876,10 @@ class ChartTabbed(QWidget):
             drik.refresh_planet_flags(self._longitude,self._latitude,self._elevation)
             drik.set_ayanamsa_mode()
             self._ayanamsa_mode = const._DEFAULT_AYANAMSA_MODE
+            if calculation_type == 'ss':
+                """ Surya Siddhanta вимагає SURYASIDDHANTA айанамшу """
+                drik.set_ayanamsa_mode('SURYASIDDHANTA')
+                self._ayanamsa_mode = 'SURYASIDDHANTA'
             self._language = const.reverse_languages[const._DEFAULT_LANGUAGE]
             year, month, day = self._dob_text.text().split(",")
             birth_date = drik.Date(int(year), int(month), int(day))
