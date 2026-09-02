@@ -59,8 +59,7 @@ class Horoscope():
         self._64th_navamsa = {}
         if self.place_name is None:
             if self.latitude is None or self.longitude is None or self.timezone_offset is None:
-                print('Please provide either place_with_country_code or combination of latitude and longitude ...\n Aborting script')
-                exit()
+                raise ValueError('Please provide either place_with_country_code or latitude, longitude, and timezone_offset')
             else:
                 self.place_name = 'Not Provided'
                 self.latitude = latitude
@@ -80,13 +79,21 @@ class Horoscope():
         self.julian_utc = utils.gregorian_to_jd(self.Date)
         #self.timezone_offset = drik.get_place_timezone_offset(self.latitude,self.longitude)
         if (birth_time!=None):
-            birth_time = birth_time.strip().replace('AM','').replace('PM','')
-            btArr = birth_time.split(':')
-            self.julian_day = swe.julday(self.Date.year,self.Date.month,self.Date.day, int(btArr[0])+int(btArr[1])/60)
-            self.birth_time = (int(btArr[0]),int(btArr[1]),0)
+            normalized_birth_time = birth_time.strip().upper()
+            is_pm = normalized_birth_time.endswith('PM')
+            is_am = normalized_birth_time.endswith('AM')
+            normalized_birth_time = normalized_birth_time.replace('AM','').replace('PM','').strip()
+            btArr = normalized_birth_time.split(':')
+            birth_hour = int(btArr[0])
+            if is_pm and birth_hour < 12:
+                birth_hour += 12
+            elif is_am and birth_hour == 12:
+                birth_hour = 0
+            self.julian_day = swe.julday(self.Date.year,self.Date.month,self.Date.day, birth_hour+int(btArr[1])/60)
+            self.birth_time = (birth_hour,int(btArr[1]),0)
             if (len(btArr)==3):
-                self.julian_day = swe.julday(self.Date.year,self.Date.month,self.Date.day, int(btArr[0])+int(btArr[1])/60+int(btArr[2])/3600)
-                self.birth_time = (int(btArr[0]),int(btArr[1]),int(btArr[2]))                
+                self.julian_day = swe.julday(self.Date.year,self.Date.month,self.Date.day, birth_hour+int(btArr[1])/60+int(btArr[2])/3600)
+                self.birth_time = (birth_hour,int(btArr[1]),int(btArr[2]))
         else:
             self.julian_day = utils.gregorian_to_jd(self.Date)
         # Set Ayanamsa Mode
@@ -132,7 +139,7 @@ class Horoscope():
             cal_key_list['timezone_offset_str'] : "{0:.2f}".format(self.timezone_offset),
             cal_key_list['report_date_str'] : "{0:d}-{1:d}-{2:d}".format(self.Date.year,self.Date.month,self.Date.day)#self.Date.isoformat(),         
         }
-        vaaram = drik.vaara(jd)
+        vaaram = drik.vaara(jd, place)
         calendar_info[cal_key_list['vaaram_str']]=utils.DAYS_LIST[vaaram]
         calendar_info[cal_key_list['calculation_type_str']]=cal_key_list['drik_panchang_str']
         if self.calculation_type.lower()=='ss':

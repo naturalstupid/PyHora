@@ -306,7 +306,7 @@ def apply_setting(key: str) -> None:
     meta = _FACTORY.get(key)
     if not meta:
         return
-    set_planet_list_keys = ["use_true_nodes_for_rahu_ketu", "include_western_planets"]
+    set_planet_list_keys = ["use_true_nodes_for_rahu_ketu", "include_uranus_to_pluto"]
     set_planet_flag_keys = ["planet_position_reference_frame","planet_position_type","use_aberration_of_light",
                             "use_gravitational_deflection","use_nutation","rise_set_use_refraction",
                             "rise_set_use_disc_center_for_rising","rise_set_hindu_rising"]
@@ -317,23 +317,28 @@ def apply_setting(key: str) -> None:
         setter = getattr(const, setter_name, None)
         if callable(setter):
             setter(value)
-            # Keep dependent runtime caches in sync
-            if key in set_planet_list_keys:
-                from jhora.panchanga import drik
-                drik.set_planet_list(
-                    set_rahu_ketu_as_true_nodes=const._use_true_nodes_for_rahu_ketu,
-                    include_western_planets=const._INCLUDE_URANUS_TO_PLUTO
-                )
-            elif key in set_planet_flag_keys:
-                from jhora import utils
-                utils.set_flags_for_planet_positions()
-                utils.set_flags_for_rise_set(flags_for_rise=True)
-                utils.set_flags_for_rise_set(flags_for_rise=False)
-        return
+        else:
+            return
+    else:
+        const_name = meta.get("const_name")
+        if const_name:
+            setattr(const, const_name, value)
+        else:
+            return
 
-    const_name = meta.get("const_name")
-    if const_name:
-        setattr(const, const_name, value)
+    # Keep process-global Swiss Ephemeris state and imported caches in sync.
+    if key == "default_ayanamsa_mode":
+        from jhora.panchanga import drik
+        drik.set_ayanamsa_mode(value)
+    elif key in set_planet_list_keys:
+        from jhora.panchanga import drik
+        drik.set_planet_list(
+            set_rahu_ketu_as_true_nodes=const._use_true_nodes_for_rahu_ketu,
+            include_western_planets=const._INCLUDE_URANUS_TO_PLUTO
+        )
+    elif key in set_planet_flag_keys:
+        from jhora.panchanga import drik
+        drik.refresh_planet_flags()
 
 
 def apply_all_settings() -> None:

@@ -142,7 +142,7 @@ def refresh_planet_flags(longitude=None,latitude=None,elevation=None):
     RISE_FLAGS = utils.set_flags_for_rise_set(flags_for_rise=True)
     SET_FLAGS = utils.set_flags_for_rise_set(flags_for_rise=False)
 
-    if PLANET_FLAGS & swe.FLG_TOPOCTR:
+    if PLANET_FLAGS & swe.FLG_TOPOCTR and None not in (longitude, latitude, elevation):
         swe.set_topo(longitude,latitude,elevation)
 
 def set_tropical_planets():
@@ -1551,15 +1551,14 @@ def planetary_positions(jd, place):
     jd_ut = jd - place.timezone / 24.
     
     positions = []
-    for planet in planet_list:
-        p_id = planet_list.index(planet)
+    for planet, p_id in planet_list.items():
         if planet == const._KETU:
             nirayana_long = ketu(sidereal_longitude(jd_ut, const._RAHU))
         else: # Ketu
             nirayana_long = sidereal_longitude(jd_ut, planet)
         constellation = int(nirayana_long / 30)
         coordinates = nirayana_long-constellation*30
-        positions.append([p_id,coordinates, constellation])        
+        positions.append([p_id,coordinates, constellation])
     return positions
 def _assign_planets_to_houses(planet_positions,bhava_houses,bhava_madhya_method=1):
     _bhava_houses = []#bhava_houses[:]
@@ -4721,7 +4720,7 @@ def true_tithi_year(jd, place,true_lunar_year_method=None, round_to_digits=6):
     Counts exactly 360 instantaneous tithi transitions.
     """
     if true_lunar_year_method is None: true_lunar_year_method = const.true_lunar_year_method_default
-    if const.TRUE_LUNAR_YEAR_METHOD.TITHI_AT_DOB:
+    if true_lunar_year_method == const.TRUE_LUNAR_YEAR_METHOD.TITHI_AT_DOB:
         return _true_tithi_year_same_phase(jd, place, round_to_digits)
     return _true_tithi_year_boundary(jd, place, round_to_digits)
 def _true_tithi_year_same_phase(jd, place, round_to_digits=6):
@@ -4930,7 +4929,7 @@ def dhasa_year_duration(dhasa_duration_type=None,jd=None,place=None,round_to_dig
     elif dhasa_duration_type == const.DHASA_YEAR_DURATION.MEAN_LUNAR_YEAR and jd_place_not_none:
         return const.lunar_year#round(const.lunar_year,round_to_digits)
     elif dhasa_duration_type == const.DHASA_YEAR_DURATION.TRUE_LUNAR_YEAR and jd_place_not_none:
-        return true_tithi_year(jd, place, round_to_digits)
+        return true_tithi_year(jd, place, true_lunar_year_method, round_to_digits)
     elif dhasa_duration_type == const.DHASA_YEAR_DURATION.GREGORIAN_YEAR:
         return const.average_gregorian_year
     else: return const.sidereal_year
