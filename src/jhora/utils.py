@@ -758,8 +758,7 @@ def deeptaamsa_range_of_planet(planet,planet_longitude_within_raasi):
 def local_time_to_jdut1(year, month, day, hour = 0, minutes = 0, seconds = 0, timezone = 0.0):
   """Converts local time to JD(UT1)"""
   y, m, d, h, mnt, s = swe.utc_time_zone(year, month, day, hour, minutes, seconds, timezone)
-  # BUG in pyswisseph: replace 0 by s
-  jd_et, jd_ut1 = swe.utc_to_jd(y, m, d, h, mnt, 0, flag = swe.GREG_CAL)
+  jd_et, jd_ut1 = swe.utc_to_jd(y, m, d, h, mnt, s, cal=swe.GREG_CAL)
   return jd_ut1
 def _convert_to_tamil_date_and_time(panchanga_date,time_of_day_in_hours,place=None):
     from jhora.panchanga.drik import sunset
