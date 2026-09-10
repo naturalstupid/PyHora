@@ -3,7 +3,7 @@
 # Copyright (C) Open Astro Technologies, USA.
 # Modified by Sundar Sundaresan, USA. carnaticmusicguru2015@comcast.net
 # Downloaded from https://github.com/naturalstupid/PyJHora
-
+#mymodification
 # This file is part of the "PyJHora" Python library
 #
 # This program is free software: you can redistribute it and/or modify
